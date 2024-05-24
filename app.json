@@ -13,12 +13,29 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.too12.myapp",
+      "permissions": [
+        "INTERNET",
+        "VIBRATE",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_FINE_LOCATION" // Add ACCESS_FINE_LOCATION permission here
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDA-IWy1Ghn1S5EM6_40oNQggTuoGK-L_4"
+        }
       }
     },
     "web": {
@@ -31,6 +48,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "7e956f8d-a25d-4e29-8970-2e2cf91ad1f4"
+      }
     }
   }
 }
