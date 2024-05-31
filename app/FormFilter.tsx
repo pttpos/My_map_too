@@ -3,9 +3,11 @@ import {
     View,
     Text,
     TouchableOpacity,
-    StyleSheet
+    StyleSheet,
+    Dimensions
 } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
+import Icon from "react-native-vector-icons/Ionicons";
 
 interface FilterFormProps {
     showFilterForm: boolean;
@@ -304,31 +306,27 @@ const FilterForm: React.FC<FilterFormProps> = ({
                         style={pickerSelectStyles}
                     />
                 </View>
-
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={[styles.button, styles.clearSelectionButton]}
                         onPress={clearSelections}
                     >
-                        <Text style={styles.buttonText}>
-                            {getTranslatedText("clearSelections")}
-                        </Text>
+                        <Icon name="close-circle-outline" size={windowWidth * 0.07} color="#fff" style={styles.icon} />
+                        <Text style={styles.buttonText}>Clear</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.button, styles.filterButton]}
                         onPress={applyFilters}
                     >
-                        <Text style={styles.buttonText}>
-                            {getTranslatedText("applyFilters")}
-                        </Text>
+                        <Icon name="filter-outline" size={windowWidth * 0.07} color="#fff" style={styles.icon} />
+                        <Text style={styles.buttonText}>Filter</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.button, styles.filterCloseButton]}
                         onPress={toggleFilterForm}
                     >
-                        <Text style={styles.buttonText}>
-                            {getTranslatedText("close")}
-                        </Text>
+                        <Icon name="close-outline" size={windowWidth * 0.07} color="#fff" style={styles.icon} />
+                        <Text style={styles.buttonText}>Close</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -337,7 +335,7 @@ const FilterForm: React.FC<FilterFormProps> = ({
         </View>
     );
 };
-
+const windowWidth = Dimensions.get('window').width;
 const styles = StyleSheet.create({
     centeredView: {
         flex: 1,
@@ -368,20 +366,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 10,
     },
-    filterButton: {
-        backgroundColor: "#007AFF",
-        padding: 12,
-        borderRadius: 10,
-        marginTop: 10,
-        alignItems: "center",
-    },
-    filterCloseButton: {
-        backgroundColor: "#FF3B30",
-        padding: 12,
-        borderRadius: 10,
-        marginTop: 10,
-        alignItems: "center",
-    },
     filterButtonText: {
         color: "white",
         fontWeight: "bold",
@@ -400,38 +384,49 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
 
-    clearSelectionButton: {
-        backgroundColor: "#FF9500",
-        padding: 12,
-        borderRadius: 10,
-        marginTop: 10,
-        alignItems: "center",
-    },
-    clearSelectionButtonText: {
-        color: "white",
-        fontWeight: "bold",
-    },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginHorizontal: 20, // Add horizontal margin
-        marginTop: 10, // Reduce top margin
+        paddingHorizontal: windowWidth * 0.05,
+        marginTop: windowWidth * 0.02,
     },
-
     button: {
         flex: 1,
-        marginHorizontal: 5,
-        paddingVertical: 50,
-        borderRadius: 10,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        marginHorizontal: windowWidth * 0.02,
+        paddingVertical: windowWidth * 0.001, // Adjusted padding for better fit
+        paddingHorizontal: windowWidth * 0.04, // Added horizontal padding for better fit
+        borderRadius: windowWidth * 0.05, // More rounded corners
+        backgroundColor: '#007AFF',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    icon: {
+        marginRight: windowWidth * 0.005, // Space between icon and text
     },
     buttonText: {
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 5,
+        fontSize: windowWidth * 0.02, // Slightly larger text
+        textAlign: 'center',
     },
-
+    clearSelectionButton: {
+        backgroundColor: '#FF3B30',
+    },
+    filterButton: {
+        backgroundColor: '#4CD964',
+    },
+    filterCloseButton: {
+        backgroundColor: '#FFCC00',
+    },
 });
 
 const pickerSelectStyles = StyleSheet.create({
