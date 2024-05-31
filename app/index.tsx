@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -21,10 +21,10 @@ import CurrentLocationMarker from "./CurrentLocationMarker";
 import Footer from "./Footer";
 import Block, { IconName } from "./Block";
 import GoogleButton from "./GoogleButton";
-import BlockImage from './BlockImage'; // Import the BlockImage component
-import LayoutMapToggle from './LayoutMapToggle';
+import BlockImage from "./BlockImage"; // Import the BlockImage component
+import LayoutMapToggle from "./LayoutMapToggle";
 import FilterForm from "./FormFilter";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface UserLocation {
   latitude: number;
@@ -62,10 +62,11 @@ const App = () => {
   const [selectedBlock, setSelectedBlock] = useState<number>(0);
   const mapRef = useRef<MapView>(null);
   const pointerPosition = useRef(new Animated.Value(0)).current;
-  const [mapType, setMapType] = React.useState<'standard' | 'satellite'>('standard');
+  const [mapType, setMapType] = React.useState<"standard" | "satellite">(
+    "standard"
+  );
   const [showFilterForm, setShowFilterForm] = useState(false);
   const [filteredMarkers, setFilteredMarkers] = useState<any[]>([]);
-
 
   useEffect(() => {
     setFilteredMarkers(markers);
@@ -86,7 +87,6 @@ const App = () => {
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedTitle, setSelectedTitle] = useState<string>("");
 
-
   // Function to update title options based on selected province
   const updateTitleOptions = (selectedProvince: string) => {
     const filteredTitles = markers
@@ -101,11 +101,10 @@ const App = () => {
     }
   }, [selectedProvince]);
 
- 
   useEffect(() => {
     const fetchMarkers = async () => {
       try {
-        const cachedMarkers = await AsyncStorage.getItem('markersData');
+        const cachedMarkers = await AsyncStorage.getItem("markersData");
         if (cachedMarkers) {
           const markersData = JSON.parse(cachedMarkers);
           setMarkers(markersData.markersWithImageUrls);
@@ -122,7 +121,21 @@ const App = () => {
           const data = await response.json();
 
           const markersWithImageUrls = data.STATION.map(
-            (station: { id: any; latitude: string; longitude: string; title: any; description: any; product: any; other_product: any; service: any; province: any; address: any; status: any; promotion: any; picture: any; }) => ({
+            (station: {
+              id: any;
+              latitude: string;
+              longitude: string;
+              title: any;
+              description: any;
+              product: any;
+              other_product: any;
+              service: any;
+              province: any;
+              address: any;
+              status: any;
+              promotion: any;
+              picture: any;
+            }) => ({
               id: station.id,
               coordinate: {
                 latitude: parseFloat(station.latitude), // Ensure latitude is a number
@@ -142,22 +155,22 @@ const App = () => {
           );
 
           const allProducts = markersWithImageUrls.flatMap(
-            (station: { product: any; }) => station.product || []
+            (station: { product: any }) => station.product || []
           );
           const allOtherProducts = markersWithImageUrls.flatMap(
-            (station: { other_product: any; }) => station.other_product || []
+            (station: { other_product: any }) => station.other_product || []
           );
           const allDescriptions = markersWithImageUrls.flatMap(
-            (station: { description: any; }) => station.description || []
+            (station: { description: any }) => station.description || []
           );
           const allServices = markersWithImageUrls.flatMap(
-            (station: { service: any; }) => station.service || []
+            (station: { service: any }) => station.service || []
           );
           const allProvinces = markersWithImageUrls.map(
-            (station: { province: any; }) => station.province
+            (station: { province: any }) => station.province
           );
           const allTitles = markersWithImageUrls.map(
-            (station: { title: any; }) => station.title
+            (station: { title: any }) => station.title
           );
 
           setMarkers(markersWithImageUrls);
@@ -178,7 +191,10 @@ const App = () => {
             titleOptions: Array.from(new Set(allTitles)),
           };
 
-          await AsyncStorage.setItem('markersData', JSON.stringify(markersData));
+          await AsyncStorage.setItem(
+            "markersData",
+            JSON.stringify(markersData)
+          );
         }
       } catch (error) {
         console.error("Error fetching markers:", error);
@@ -258,28 +274,33 @@ const App = () => {
     setModalVisible(false);
   };
 
-
   const applyFilters = () => {
     let filtered = markers;
-  
+
     if (selectedProduct) {
       filtered = filtered.filter(
-        (station) => station.product && station.product.includes(selectedProduct)
+        (station) =>
+          station.product && station.product.includes(selectedProduct)
       );
     }
     if (selectedOtherProduct) {
       filtered = filtered.filter(
-        (station) => station.other_product && station.other_product.includes(selectedOtherProduct)
+        (station) =>
+          station.other_product &&
+          station.other_product.includes(selectedOtherProduct)
       );
     }
     if (selectedDescription) {
       filtered = filtered.filter(
-        (station) => station.description && station.description.includes(selectedDescription)
+        (station) =>
+          station.description &&
+          station.description.includes(selectedDescription)
       );
     }
     if (selectedService) {
       filtered = filtered.filter(
-        (station) => station.service && station.service.includes(selectedService)
+        (station) =>
+          station.service && station.service.includes(selectedService)
       );
     }
     if (selectedProvince) {
@@ -287,7 +308,7 @@ const App = () => {
         (station) => station.province === selectedProvince
       );
     }
-  
+
     // If only title is selected, filter by title and zoom to the first matching marker
     if (
       selectedTitle &&
@@ -316,7 +337,7 @@ const App = () => {
       setShowFilterForm(false); // Hide the filter form
       return;
     }
-  
+
     // If both province and title are selected, filter by province and then by title within that province
     if (selectedProvince && selectedTitle) {
       const filteredByProvince = filtered.filter(
@@ -342,9 +363,9 @@ const App = () => {
       setShowFilterForm(false); // Hide the filter form
       return;
     }
-  
+
     setFilteredMarkers(filtered); // Update filtered markers
-  
+
     if (filtered.length > 0) {
       // Calculate region based on filtered markers
       const minLat = Math.min(
@@ -359,12 +380,12 @@ const App = () => {
       const maxLon = Math.max(
         ...filtered.map((station) => parseFloat(station.coordinate.longitude))
       );
-  
+
       const latitude = (minLat + maxLat) / 2;
       const longitude = (minLon + maxLon) / 2;
       const latitudeDelta = Math.abs(maxLat - minLat) * 1.2;
       const longitudeDelta = Math.abs(maxLon - minLon) * 1.2;
-  
+
       // Animate map to the calculated region
       mapRef.current?.animateToRegion(
         {
@@ -376,11 +397,10 @@ const App = () => {
         500
       );
     }
-  
+
     setShowFilterForm(false); // Hide the filter form
   };
-  
-  
+
   useEffect(() => {
     if (selectedTitle) {
       const selectedMarker = markers.find(
@@ -420,7 +440,7 @@ const App = () => {
         const allServices = markers
           .filter((marker) => marker.service)
           .flatMap((marker) => marker.service);
-  
+
         setTitleOptions(Array.from(new Set(allTitles)));
         setProductOptions(Array.from(new Set(allProducts)));
         setOtherProductOptions(Array.from(new Set(allOtherProducts)));
@@ -430,7 +450,7 @@ const App = () => {
         const filteredMarkers = markers.filter(
           (marker) => marker.province === selectedProvince
         );
-  
+
         const filteredTitles = filteredMarkers
           .filter((marker) => marker.title)
           .map((marker) => marker.title);
@@ -446,7 +466,7 @@ const App = () => {
         const filteredServices = filteredMarkers
           .filter((marker) => marker.service)
           .flatMap((marker) => marker.service);
-  
+
         setTitleOptions(Array.from(new Set(filteredTitles)));
         setProductOptions(Array.from(new Set(filteredProducts)));
         setOtherProductOptions(Array.from(new Set(filteredOtherProducts)));
@@ -454,19 +474,17 @@ const App = () => {
         setServiceOptions(Array.from(new Set(filteredServices)));
       }
     };
-  
+
     // Update options only when the filter form is shown
     if (showFilterForm) {
       updateOptions();
     }
   }, [selectedProvince, markers, showFilterForm]);
-  
-  
+
   // Function to toggle filter form smoothly
   const toggleFilterForm = () => {
     setShowFilterForm(!showFilterForm);
   };
-
 
   const markerImage = require("../assets/picture/6.png"); // Use your custom marker image here
   // Define an object to map product values to image URLs
@@ -478,22 +496,16 @@ const App = () => {
         style={styles.map}
         initialRegion={region}
         mapType={mapType}
-
-
         region={region}
-
         showsUserLocation={false}
       >
-
         {filteredMarkers.map((marker) => (
           <Marker
             key={marker.id}
             coordinate={marker.coordinate}
             title={marker.title}
             onPress={() => handleMarkerPress(marker)}
-          >
-
-          </Marker>
+          ></Marker>
         ))}
 
         {userLocation && (
@@ -572,14 +584,15 @@ const App = () => {
                 </ScrollView>
               </View>
 
-              <BlockImage selectedBlock={selectedBlock} selectedMarker={selectedMarker} />
-
+              <BlockImage
+                selectedBlock={selectedBlock}
+                selectedMarker={selectedMarker}
+              />
             </View>
           )}
         </View>
       </Modal>
       {/* Modal //////////////////////////////////////////////////////////////////////////////////////*/}
-
 
       {/* Footer */}
       <Footer
@@ -587,7 +600,6 @@ const App = () => {
         mapRef={mapRef}
         userLocation={userLocation}
       />
-
 
       {showFilterForm && (
         <FilterForm
@@ -607,7 +619,7 @@ const App = () => {
           provinceOptions={provinceOptions}
           titleOptions={titleOptions}
           productOptions={productOptions}
-          otherProductOptions={otherProductOptions} 
+          otherProductOptions={otherProductOptions}
           descriptionOptions={descriptionOptions}
           serviceOptions={serviceOptions}
           applyFilters={applyFilters}
@@ -622,7 +634,6 @@ function openGoogleMaps(lat: number, lon: number) {
   const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
   Linking.openURL(url);
 }
-
 
 const { width, height } = Dimensions.get("window");
 const styles = StyleSheet.create({
@@ -825,16 +836,14 @@ const styles = StyleSheet.create({
     borderRadius: 25, // Make the image round
     marginRight: 50, // Add space between product images
     marginBottom: 5,
-
   },
   Other_productImage: {
     width: 70, // Adjust the width as needed
     height: 70, // Adjust the height as needed
     marginRight: 10, // Add space between product images
     marginBottom: 5,
-    resizeMode: 'contain', // Fit image within the container without cropping
+    resizeMode: "contain", // Fit image within the container without cropping
   },
-
 });
 
 export default App;
