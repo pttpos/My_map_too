@@ -30,7 +30,7 @@
         "INTERNET",
         "VIBRATE",
         "ACCESS_NETWORK_STATE",
-        "ACCESS_FINE_LOCATION" // Add ACCESS_FINE_LOCATION permission here
+        "ACCESS_FINE_LOCATION"
       ],
       "config": {
         "googleMaps": {
@@ -54,7 +54,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "7e956f8d-a25d-4e29-8970-2e2cf91ad1f4"
+        "projectId": "ce3e0c48-62f5-4dda-b53d-4bf3a0cf53bb"
       }
     }
   }

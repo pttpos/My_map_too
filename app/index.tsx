@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, } from "react";
 import {
   StyleSheet,
   View,
@@ -14,7 +14,6 @@ import {
 import MapView, { Marker, Region } from "react-native-maps";
 import * as Location from "expo-location";
 
-
 import { Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from "react-native-picker-select";
@@ -24,6 +23,8 @@ import Block, { IconName } from "./Block";
 import GoogleButton from "./GoogleButton";
 import BlockImage from './BlockImage'; // Import the BlockImage component
 import LayoutMapToggle from './LayoutMapToggle';
+import FilterForm from "./FormFilter";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserLocation {
   latitude: number;
@@ -33,8 +34,10 @@ interface UserLocation {
 const App = () => {
   const [markers, setMarkers] = useState<
     Array<{
+      longitude: any;
+      latitude: any;
       id: number;
-      coordinate: { latitude: number; longitude: number };
+      coordinate: { latitude: string; longitude: string };
       title: string;
       description: string[];
       product: string[];
@@ -63,29 +66,13 @@ const App = () => {
   const [showFilterForm, setShowFilterForm] = useState(false);
   const [filteredMarkers, setFilteredMarkers] = useState<any[]>([]);
 
+
   useEffect(() => {
-    fetchMarkers();
-  }, []);
-
-  const fetchMarkers = async () => {
-    try {
-      const response = await fetch(
-        "http://180.178.127.119:8282/API/data/markers.json"
-      );
-      const data = await response.json();
-
-      // Construct full image URLs
-      const markersWithImageUrls = data.map((marker: { picture: any }) => ({
-        ...marker,
-        picture: `http://180.178.127.119:8282/API/picture/${marker.picture}`,
-      }));
-
-      setMarkers(markersWithImageUrls);
-      setFilteredMarkers(markersWithImageUrls); // Assuming you want to initially show all markers
-    } catch (error) { }
-  };
+    setFilteredMarkers(markers);
+  }, [markers]);
   // Filter options
   const [productOptions, setProductOptions] = useState<string[]>([]);
+  const [otherProductOptions, setOtherProductOptions] = useState<string[]>([]);
   const [descriptionOptions, setDescriptionOptions] = useState<string[]>([]);
   const [serviceOptions, setServiceOptions] = useState<string[]>([]);
   const [provinceOptions, setProvinceOptions] = useState<string[]>([]);
@@ -93,10 +80,13 @@ const App = () => {
 
   // Selected filter values
   const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [selectedOtherProduct, setSelectedOtherProduct] = useState<string>("");
   const [selectedDescription, setSelectedDescription] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedTitle, setSelectedTitle] = useState<string>("");
+
+
   // Function to update title options based on selected province
   const updateTitleOptions = (selectedProvince: string) => {
     const filteredTitles = markers
@@ -111,76 +101,87 @@ const App = () => {
     }
   }, [selectedProvince]);
 
+ 
   useEffect(() => {
     const fetchMarkers = async () => {
       try {
-        const response = await fetch(
-          "http://180.178.127.119:8282/API/data/markers.json"
-        );
-        const data = await response.json();
+        const cachedMarkers = await AsyncStorage.getItem('markersData');
+        if (cachedMarkers) {
+          const markersData = JSON.parse(cachedMarkers);
+          setMarkers(markersData.markersWithImageUrls);
+          setProvinceOptions(markersData.provinceOptions || []);
+          setProductOptions(markersData.productOptions || []);
+          setOtherProductOptions(markersData.otherProductOptions || []);
+          setDescriptionOptions(markersData.descriptionOptions || []);
+          setServiceOptions(markersData.serviceOptions || []);
+          setTitleOptions(markersData.titleOptions || []);
+        } else {
+          const response = await fetch(
+            "https://raw.githubusercontent.com/pttpos/map_ptt/main/data/markers.json"
+          );
+          const data = await response.json();
 
-        // Process the data to include the full image URL
-        const markersWithImageUrls = data.STATION.map(
-          (station: {
-            id: any;
-            latitude: any;
-            longitude: any;
-            title: any;
-            description: any;
-            product: any;
-            other_product: any;
-            service: any;
-            province: any;
-            address: any;
-            status: any;
-            promotion: any;
-            picture: any;
-          }) => ({
-            id: station.id,
-            coordinate: {
-              latitude: parseFloat(station.latitude), // Ensure latitude is a number
-              longitude: parseFloat(station.longitude), // Ensure longitude is a number
-            },
-            title: station.title,
-            description: station.description,
-            product: station.product,
-            other_product: station.other_product,
-            service: station.service,
-            province: station.province,
-            address: station.address,
-            status: station.status,
-            promotion: station.promotion,
-            picture: `http://180.178.127.119:8282/API/pictures/${station.picture}`, // Full image URL
-          })
-        );
+          const markersWithImageUrls = data.STATION.map(
+            (station: { id: any; latitude: string; longitude: string; title: any; description: any; product: any; other_product: any; service: any; province: any; address: any; status: any; promotion: any; picture: any; }) => ({
+              id: station.id,
+              coordinate: {
+                latitude: parseFloat(station.latitude), // Ensure latitude is a number
+                longitude: parseFloat(station.longitude), // Ensure longitude is a number
+              },
+              title: station.title,
+              description: station.description,
+              product: station.product,
+              other_product: station.other_product,
+              service: station.service,
+              province: station.province,
+              address: station.address,
+              status: station.status,
+              promotion: station.promotion,
+              picture: `https://raw.githubusercontent.com/pttpos/map_ptt/main/pictures/${station.picture}`, // Full image URL
+            })
+          );
 
-        // Set the markers state with processed data
-        setMarkers(markersWithImageUrls);
+          const allProducts = markersWithImageUrls.flatMap(
+            (station: { product: any; }) => station.product || []
+          );
+          const allOtherProducts = markersWithImageUrls.flatMap(
+            (station: { other_product: any; }) => station.other_product || []
+          );
+          const allDescriptions = markersWithImageUrls.flatMap(
+            (station: { description: any; }) => station.description || []
+          );
+          const allServices = markersWithImageUrls.flatMap(
+            (station: { service: any; }) => station.service || []
+          );
+          const allProvinces = markersWithImageUrls.map(
+            (station: { province: any; }) => station.province
+          );
+          const allTitles = markersWithImageUrls.map(
+            (station: { title: any; }) => station.title
+          );
 
-        // Extract unique values for filter options
-        const allProducts = markersWithImageUrls.flatMap(
-          (station: { product: any }) => station.product
-        );
-        const allDescriptions = markersWithImageUrls.flatMap(
-          (station: { description: any }) => station.description
-        );
-        const allServices = markersWithImageUrls.flatMap(
-          (station: { service: any }) => station.service
-        );
-        const allProvinces = markersWithImageUrls.map(
-          (station: { province: any }) => station.province
-        );
-        const allTitles = markersWithImageUrls.map(
-          (station: { title: any }) => station.title
-        );
+          setMarkers(markersWithImageUrls);
+          setProvinceOptions(Array.from(new Set(allProvinces)));
+          setProductOptions(Array.from(new Set(allProducts)));
+          setOtherProductOptions(Array.from(new Set(allOtherProducts)));
+          setDescriptionOptions(Array.from(new Set(allDescriptions)));
+          setServiceOptions(Array.from(new Set(allServices)));
+          setTitleOptions(Array.from(new Set(allTitles)));
 
-        setProvinceOptions(Array.from(new Set(allProvinces)));
-        setProductOptions(Array.from(new Set(allProducts)));
-        setDescriptionOptions(Array.from(new Set(allDescriptions)));
-        setServiceOptions(Array.from(new Set(allServices)));
-        setTitleOptions(Array.from(new Set(allTitles)));
+          const markersData = {
+            markersWithImageUrls,
+            provinceOptions: Array.from(new Set(allProvinces)),
+            productOptions: Array.from(new Set(allProducts)),
+            otherProductOptions: Array.from(new Set(allOtherProducts)),
+            descriptionOptions: Array.from(new Set(allDescriptions)),
+            serviceOptions: Array.from(new Set(allServices)),
+            titleOptions: Array.from(new Set(allTitles)),
+          };
+
+          await AsyncStorage.setItem('markersData', JSON.stringify(markersData));
+        }
       } catch (error) {
-        console.error("Error fetching marker data:", error);
+        console.error("Error fetching markers:", error);
       }
     };
 
@@ -256,134 +257,217 @@ const App = () => {
   const handleCloseModal = () => {
     setModalVisible(false);
   };
-  // Function to handle title selection
-  const handleTitleSelection = (title: string) => {
-    // Find the marker associated with the selected title
-    const markerWithTitle = markers.find((marker) => marker.title === title);
-    if (markerWithTitle) {
-      // Get the province of the marker
-      const provinceOfTitle = markerWithTitle.province;
-      // Find the marker with the same province as the selected title
-      const markerInProvince = markers.find(
-        (marker) => marker.province === provinceOfTitle
-      );
-      if (markerInProvince) {
-        // Move and zoom the map to the province of the selected title
-        mapRef.current?.animateToRegion(
-          {
-            latitude: markerInProvince.coordinate.latitude,
-            longitude: markerInProvince.coordinate.longitude,
-            latitudeDelta: 0.02, // Adjust as needed
-            longitudeDelta: 0.02, // Adjust as needed
-          },
-          500
-        ); // Adjust the duration as needed (500 milliseconds in this example)
-      }
-    }
-  };
+
 
   const applyFilters = () => {
     let filtered = markers;
-
+  
     if (selectedProduct) {
-      filtered = filtered.filter((marker) =>
-        marker.product.includes(selectedProduct)
+      filtered = filtered.filter(
+        (station) => station.product && station.product.includes(selectedProduct)
       );
     }
-
+    if (selectedOtherProduct) {
+      filtered = filtered.filter(
+        (station) => station.other_product && station.other_product.includes(selectedOtherProduct)
+      );
+    }
     if (selectedDescription) {
-      filtered = filtered.filter((marker) =>
-        marker.description.includes(selectedDescription)
+      filtered = filtered.filter(
+        (station) => station.description && station.description.includes(selectedDescription)
       );
     }
-
     if (selectedService) {
-      filtered = filtered.filter((marker) =>
-        marker.service.includes(selectedService)
+      filtered = filtered.filter(
+        (station) => station.service && station.service.includes(selectedService)
       );
     }
-
     if (selectedProvince) {
       filtered = filtered.filter(
-        (marker) => marker.province === selectedProvince
+        (station) => station.province === selectedProvince
       );
     }
-
-    if (selectedTitle) {
-      // Find the selected marker by title
-      const selectedMarker = markers.find(
-        (marker) => marker.title === selectedTitle
+  
+    // If only title is selected, filter by title and zoom to the first matching marker
+    if (
+      selectedTitle &&
+      !selectedProduct &&
+      !selectedDescription &&
+      !selectedService &&
+      !selectedProvince
+    ) {
+      const filteredByTitle = filtered.filter(
+        (station) => station.title === selectedTitle
       );
-      if (selectedMarker) {
-        // Zoom in on the selected marker
-        const region = {
-          latitude: selectedMarker.coordinate.latitude,
-          longitude: selectedMarker.coordinate.longitude,
-          latitudeDelta: 0.0, // Adjust as needed
-          longitudeDelta: 0.01, // Adjust as needed
-        };
-        mapRef.current?.animateToRegion(region, 500);
-        setRegion(region); // Update the region state to encompass the selected marker
+      if (filteredByTitle.length > 0) {
+        const { coordinate } = filteredByTitle[0];
+        if (coordinate) {
+          mapRef.current?.animateToRegion(
+            {
+              latitude: parseFloat(coordinate.latitude),
+              longitude: parseFloat(coordinate.longitude),
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
+            },
+            500
+          );
+        }
       }
-    } else {
-      // Calculate the bounding region to encompass all markers
-      if (filtered.length > 0) {
-        const coordinates = filtered.map((marker) => marker.coordinate);
-        const minLatitude = Math.min(
-          ...coordinates.map((coord) => coord.latitude)
-        );
-        const maxLatitude = Math.max(
-          ...coordinates.map((coord) => coord.latitude)
-        );
-        const minLongitude = Math.min(
-          ...coordinates.map((coord) => coord.longitude)
-        );
-        const maxLongitude = Math.max(
-          ...coordinates.map((coord) => coord.longitude)
-        );
-
-        const region = {
-          latitude: (minLatitude + maxLatitude) / 2,
-          longitude: (minLongitude + maxLongitude) / 2,
-          latitudeDelta: maxLatitude - minLatitude + 1.1,
-          longitudeDelta: maxLongitude - minLongitude + 1.1,
-        };
-
-        mapRef.current?.animateToRegion(region, 500);
-        setRegion(region); // Update the region state to encompass all markers
-      }
+      setShowFilterForm(false); // Hide the filter form
+      return;
     }
-
-    setFilteredMarkers(filtered);
-    setShowFilterForm(false);
-  };
-
-  useEffect(() => {
-    // Zoom in to marker's location when a title is selected
-    if (selectedTitle && selectedMarker) {
-      const { latitude, longitude } = selectedMarker.coordinate;
+  
+    // If both province and title are selected, filter by province and then by title within that province
+    if (selectedProvince && selectedTitle) {
+      const filteredByProvince = filtered.filter(
+        (station) => station.province === selectedProvince
+      );
+      const filteredByProvinceAndTitle = filteredByProvince.filter(
+        (station) => station.title === selectedTitle
+      );
+      if (filteredByProvinceAndTitle.length > 0) {
+        const { coordinate } = filteredByProvinceAndTitle[0];
+        if (coordinate) {
+          mapRef.current?.animateToRegion(
+            {
+              latitude: parseFloat(coordinate.latitude),
+              longitude: parseFloat(coordinate.longitude),
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
+            },
+            500
+          );
+        }
+      }
+      setShowFilterForm(false); // Hide the filter form
+      return;
+    }
+  
+    setFilteredMarkers(filtered); // Update filtered markers
+  
+    if (filtered.length > 0) {
+      // Calculate region based on filtered markers
+      const minLat = Math.min(
+        ...filtered.map((station) => parseFloat(station.coordinate.latitude))
+      );
+      const maxLat = Math.max(
+        ...filtered.map((station) => parseFloat(station.coordinate.latitude))
+      );
+      const minLon = Math.min(
+        ...filtered.map((station) => parseFloat(station.coordinate.longitude))
+      );
+      const maxLon = Math.max(
+        ...filtered.map((station) => parseFloat(station.coordinate.longitude))
+      );
+  
+      const latitude = (minLat + maxLat) / 2;
+      const longitude = (minLon + maxLon) / 2;
+      const latitudeDelta = Math.abs(maxLat - minLat) * 1.2;
+      const longitudeDelta = Math.abs(maxLon - minLon) * 1.2;
+  
+      // Animate map to the calculated region
       mapRef.current?.animateToRegion(
         {
           latitude,
           longitude,
-          latitudeDelta: 0.02, // Adjust as needed
-          longitudeDelta: 0.02, // Adjust as needed
+          latitudeDelta,
+          longitudeDelta,
         },
         500
       );
     }
-  }, [selectedTitle]);
-
+  
+    setShowFilterForm(false); // Hide the filter form
+  };
+  
+  
   useEffect(() => {
-    if (selectedProvince) {
-      const filteredTitles = markers
-        .filter((marker) => marker.province === selectedProvince)
-        .map((marker) => marker.title);
-      setTitleOptions(Array.from(new Set(filteredTitles)));
-    } else {
-      setTitleOptions([]);
+    if (selectedTitle) {
+      const selectedMarker = markers.find(
+        (marker) => marker.title === selectedTitle
+      );
+      if (selectedMarker && selectedMarker.coordinate) {
+        const { latitude, longitude } = selectedMarker.coordinate;
+        if (latitude !== undefined && longitude !== undefined) {
+          mapRef.current?.animateToRegion(
+            {
+              latitude: parseFloat(latitude),
+              longitude: parseFloat(longitude),
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
+            },
+            500
+          );
+        }
+      }
     }
-  }, [selectedProvince]);
+  }, [selectedTitle, markers]);
+  useEffect(() => {
+    const updateOptions = () => {
+      if (!selectedProvince) {
+        const allTitles = markers
+          .filter((marker) => marker.title)
+          .map((marker) => marker.title);
+        const allProducts = markers
+          .filter((marker) => marker.product)
+          .flatMap((marker) => marker.product);
+        const allOtherProducts = markers
+          .filter((marker) => marker.other_product)
+          .flatMap((marker) => marker.other_product);
+        const allDescriptions = markers
+          .filter((marker) => marker.description)
+          .flatMap((marker) => marker.description);
+        const allServices = markers
+          .filter((marker) => marker.service)
+          .flatMap((marker) => marker.service);
+  
+        setTitleOptions(Array.from(new Set(allTitles)));
+        setProductOptions(Array.from(new Set(allProducts)));
+        setOtherProductOptions(Array.from(new Set(allOtherProducts)));
+        setDescriptionOptions(Array.from(new Set(allDescriptions)));
+        setServiceOptions(Array.from(new Set(allServices)));
+      } else {
+        const filteredMarkers = markers.filter(
+          (marker) => marker.province === selectedProvince
+        );
+  
+        const filteredTitles = filteredMarkers
+          .filter((marker) => marker.title)
+          .map((marker) => marker.title);
+        const filteredProducts = filteredMarkers
+          .filter((marker) => marker.product)
+          .flatMap((marker) => marker.product);
+        const filteredOtherProducts = filteredMarkers
+          .filter((marker) => marker.other_product)
+          .flatMap((marker) => marker.other_product);
+        const filteredDescriptions = filteredMarkers
+          .filter((marker) => marker.description)
+          .flatMap((marker) => marker.description);
+        const filteredServices = filteredMarkers
+          .filter((marker) => marker.service)
+          .flatMap((marker) => marker.service);
+  
+        setTitleOptions(Array.from(new Set(filteredTitles)));
+        setProductOptions(Array.from(new Set(filteredProducts)));
+        setOtherProductOptions(Array.from(new Set(filteredOtherProducts)));
+        setDescriptionOptions(Array.from(new Set(filteredDescriptions)));
+        setServiceOptions(Array.from(new Set(filteredServices)));
+      }
+    };
+  
+    // Update options only when the filter form is shown
+    if (showFilterForm) {
+      updateOptions();
+    }
+  }, [selectedProvince, markers, showFilterForm]);
+  
+  
+  // Function to toggle filter form smoothly
+  const toggleFilterForm = () => {
+    setShowFilterForm(!showFilterForm);
+  };
+
+
   const markerImage = require("../assets/picture/6.png"); // Use your custom marker image here
   // Define an object to map product values to image URLs
 
@@ -392,39 +476,25 @@ const App = () => {
       <MapView
         ref={mapRef}
         style={styles.map}
-        region={region}
+        initialRegion={region}
         mapType={mapType}
+
+
+        region={region}
+
         showsUserLocation={false}
       >
-        {filteredMarkers.length > 0
-          ? filteredMarkers.map((marker) => (
-            <Marker
-              key={marker.id}
-              coordinate={marker.coordinate}
-              title={marker.title}
-              onPress={() => handleMarkerPress(marker)}
-              anchor={{ x: 0.5, y: 0.5 }}
-              centerOffset={{ x: 0, y: -20 }}
-            >
-              <View style={styles.markerWrapper}>
-                <Image source={markerImage} style={styles.markerImage} />
-              </View>
-            </Marker>
-          ))
-          : markers.map((marker) => (
-            <Marker
-              key={marker.id}
-              coordinate={marker.coordinate}
-              title={marker.title}
-              onPress={() => handleMarkerPress(marker)}
-              anchor={{ x: 0.5, y: 0.5 }}
-              centerOffset={{ x: 0, y: -20 }}
-            >
-              <View style={styles.markerWrapper}>
-                <Image source={markerImage} style={styles.markerImage} />
-              </View>
-            </Marker>
-          ))}
+
+        {filteredMarkers.map((marker) => (
+          <Marker
+            key={marker.id}
+            coordinate={marker.coordinate}
+            title={marker.title}
+            onPress={() => handleMarkerPress(marker)}
+          >
+
+          </Marker>
+        ))}
 
         {userLocation && (
           <Marker
@@ -439,7 +509,7 @@ const App = () => {
       {/* Toggle button for map type */}
       <LayoutMapToggle mapType={mapType} setMapType={setMapType} />
 
-      {/* Modal */}
+      {/* Modal //////////////////////////////////////////////////////////////////////////////////////*/}
       <Modal
         animationType="slide"
         transparent={false}
@@ -508,6 +578,8 @@ const App = () => {
           )}
         </View>
       </Modal>
+      {/* Modal //////////////////////////////////////////////////////////////////////////////////////*/}
+
 
       {/* Footer */}
       <Footer
@@ -515,88 +587,32 @@ const App = () => {
         mapRef={mapRef}
         userLocation={userLocation}
       />
-      {/* Filter Form */}
-      {showFilterForm && (
-        <View style={styles.filterContainer}>
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterTitle}>Filter by Province:</Text>
-            <RNPickerSelect
-              placeholder={{ label: "Select Province", value: null }}
-              value={selectedProvince}
-              onValueChange={(value) => setSelectedProvince(value)}
-              items={provinceOptions.map((option) => ({
-                label: option,
-                value: option,
-              }))}
-              style={pickerSelectStyles}
-            />
-          </View>
 
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterTitle}>Filter by Title:</Text>
-            <RNPickerSelect
-              placeholder={{ label: "Select Title", value: null }}
-              value={selectedTitle}
-              onValueChange={(value) => {
-                setSelectedTitle(value);
-                handleTitleSelection(value);
-              }}
-              items={titleOptions.map((option) => ({
-                label: option,
-                value: option,
-              }))}
-              style={pickerSelectStyles}
-            />
-          </View>
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterTitle}>Filter by Product:</Text>
-            <RNPickerSelect
-              placeholder={{ label: "Select Product", value: null }}
-              value={selectedProduct}
-              onValueChange={(value) => setSelectedProduct(value)}
-              items={productOptions.map((option) => ({
-                label: option,
-                value: option,
-              }))}
-              style={pickerSelectStyles}
-            />
-          </View>
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterTitle}>Filter by Description:</Text>
-            <RNPickerSelect
-              placeholder={{ label: "Select Description", value: null }}
-              value={selectedDescription}
-              onValueChange={(value) => setSelectedDescription(value)}
-              items={descriptionOptions.map((option) => ({
-                label: option,
-                value: option,
-              }))}
-              style={pickerSelectStyles}
-            />
-          </View>
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterTitle}>Filter by Service:</Text>
-            <RNPickerSelect
-              placeholder={{ label: "Select Service", value: null }}
-              value={selectedService}
-              onValueChange={(value) => setSelectedService(value)}
-              items={serviceOptions.map((option) => ({
-                label: option,
-                value: option,
-              }))}
-              style={pickerSelectStyles}
-            />
-          </View>
-          <TouchableOpacity style={styles.filterButton} onPress={applyFilters}>
-            <Text style={styles.filterButtonText}>Apply Filters</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.filterCloseButton}
-            onPress={() => setShowFilterForm(false)}
-          >
-            <Text style={styles.filterButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
+
+      {showFilterForm && (
+        <FilterForm
+          showFilterForm={showFilterForm}
+          selectedProvince={selectedProvince}
+          setSelectedProvince={setSelectedProvince}
+          selectedTitle={selectedTitle}
+          setSelectedTitle={setSelectedTitle}
+          selectedProduct={selectedProduct}
+          setSelectedProduct={setSelectedProduct}
+          selectedOtherProduct={selectedOtherProduct} // Assuming this is correct
+          setSelectedOtherProduct={setSelectedOtherProduct} // Assuming this is correct
+          selectedDescription={selectedDescription}
+          setSelectedDescription={setSelectedDescription}
+          selectedService={selectedService}
+          setSelectedService={setSelectedService}
+          provinceOptions={provinceOptions}
+          titleOptions={titleOptions}
+          productOptions={productOptions}
+          otherProductOptions={otherProductOptions} 
+          descriptionOptions={descriptionOptions}
+          serviceOptions={serviceOptions}
+          applyFilters={applyFilters}
+          toggleFilterForm={toggleFilterForm}
+        />
       )}
     </View>
   );
@@ -607,22 +623,7 @@ function openGoogleMaps(lat: number, lon: number) {
   Linking.openURL(url);
 }
 
-const pickerSelectStyles = StyleSheet.create({
-  inputIOS: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    marginBottom: 20,
-    padding: 8,
-  },
-  inputAndroid: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    marginBottom: 20,
-    padding: 8,
-  },
-});
+
 const { width, height } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {

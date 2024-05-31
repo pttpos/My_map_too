@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
-import { View, Animated, StyleSheet } from "react-native";
+import { View, Animated, StyleSheet, Easing, PixelRatio } from "react-native";
 import { Marker } from "react-native-maps";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface Props {
   coordinate: {
@@ -10,65 +10,82 @@ interface Props {
   };
   size?: number;
   markerColor?: string;
-  pulseColor?: string;
 }
 
-const CurrentLocationMarker: React.FC<Props> = ({ coordinate, size = 20, markerColor = "red", pulseColor = "red" }) => {
-  const scaleValue = useRef(new Animated.Value(1)).current;
-  const opacityValue = useRef(new Animated.Value(1)).current;
+const CompassMarker: React.FC<Props> = ({ coordinate, size = 30, markerColor = "#4285F4" }) => {
+  const rotationValue = useRef(new Animated.Value(0)).current;
+  const pulseAnimation = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleValue, {
-          toValue: 1.5,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleValue, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
+    const compassAnimation = Animated.loop(
+      Animated.timing(rotationValue, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
     );
+    compassAnimation.start();
 
-    const opacityAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacityValue, {
-          toValue: 0.5,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityValue, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
+    return () => {
+      compassAnimation.stop();
+    };
+  }, [rotationValue]);
 
-    pulseAnimation.start();
-    opacityAnimation.start();
-  }, []);
+  useEffect(() => {
+    const pulseInAnimation = Animated.timing(pulseAnimation, {
+      toValue: 1.2,
+      duration: 1000,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    });
+
+    const pulseOutAnimation = Animated.timing(pulseAnimation, {
+      toValue: 1,
+      duration: 1000,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    });
+
+    const pulseSequence = Animated.sequence([pulseInAnimation, pulseOutAnimation]);
+
+    const pulseLoop = Animated.loop(pulseSequence);
+    pulseLoop.start();
+
+    return () => {
+      pulseLoop.stop();
+    };
+  }, [pulseAnimation]);
+
+  const rotateStyle = {
+    transform: [{
+      rotate: rotationValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '360deg'],
+      })
+    }]
+  };
+
+  const pulseStyle = {
+    transform: [{ scale: pulseAnimation }],
+  };
+
+  const markerContainerStyle = {
+    width: size +10,
+    height: size +10,
+    borderRadius: (size + 1) / 6,
+    alignItems: "center" as "center",
+    justifyContent: "center" as "center",
+  };
+
+  const iconSize = size * PixelRatio.getFontScale() * 0.6;
 
   return (
-    <Marker coordinate={coordinate}>
-      <View style={styles.markerContainer}>
-        <Animated.View
-          style={[
-            styles.pulse,
-            {
-              transform: [{ scale: scaleValue }],
-              opacity: opacityValue,
-              width: size * 2,
-              height: size * 2,
-              borderRadius: size,
-              backgroundColor: pulseColor,
-            },
-          ]}
-        />
-        <MaterialCommunityIcons name="map-marker-radius" size={size} color={markerColor} />
+    <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }}>
+      <View style={[styles.markerContainer, markerContainerStyle]}>
+        <Animated.View style={[styles.compass, rotateStyle, pulseStyle, { width: size, height: size, borderRadius: size / 2, backgroundColor: markerColor }]}>
+          <MaterialIcons name="location-pin" size={iconSize} color="#fff" />
+        </Animated.View>
       </View>
     </Marker>
   );
@@ -79,11 +96,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pulse: {
-    position: "absolute",
-    borderWidth: 2,
-    borderColor: "white",
+  compass: {
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    borderWidth: 1,
+    borderColor: "#fff",
   },
 });
 
-export default CurrentLocationMarker;
+export default CompassMarker;
