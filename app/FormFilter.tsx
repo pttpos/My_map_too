@@ -4,11 +4,11 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    Dimensions
+    Dimensions,
 } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
 import Icon from "react-native-vector-icons/Ionicons";
-
+import * as Animatable from "react-native-animatable";
 interface FilterFormProps {
     showFilterForm: boolean;
     selectedProvince: string;
@@ -72,9 +72,9 @@ const FilterForm: React.FC<FilterFormProps> = ({
             selectOtherProduct: "Select Other Product",
             selectDescription: "Select Service",
             selectService: "Select Payment",
-            applyFilters: "Apply Filters",
+            applyFilters: "Apply",
             close: "Close",
-            clearSelections: "Clear Selections",
+            clearSelections: "Clear",
             english: "English",
             khmer: "Khmer",
             thai: "Thai",
@@ -92,9 +92,9 @@ const FilterForm: React.FC<FilterFormProps> = ({
             selectOtherProduct: "ជ្រើសរើសផលិតផលផ្សេងៗ",
             selectDescription: "ជ្រើសរើសសេវាកម្ម",
             selectService: "ជ្រើសរើសការទូទាត់",
-            applyFilters: "អនុវត្តចម្បង",
+            applyFilters: "ស្វែងរក",
             close: "បិទ",
-            clearSelections: "សំអាតការជ្រើសរើស",
+            clearSelections: "សំអាត",
             english: "អង់គ្លេស",
             khmer: "ខ្មែរ",
             thai: "ថៃ",
@@ -112,9 +112,9 @@ const FilterForm: React.FC<FilterFormProps> = ({
             selectOtherProduct: "เลือกผลิตภัณฑ์อื่นๆ",
             selectDescription: "เลือกคำอธิบาย",
             selectService: "เลือกบริการ",
-            applyFilters: "นำไปใช้ตัวกรอง",
+            applyFilters: "ค้นหา",
             close: "ปิด",
-            clearSelections: "ล้างการเลือก",
+            clearSelections: "ชัดเจน",
             english: "อังกฤษ",
             khmer: "เขมร",
             thai: "ไทย",
@@ -152,30 +152,42 @@ const FilterForm: React.FC<FilterFormProps> = ({
             <View style={styles.filterContainer}>
                 {/* Language Selection Buttons */}
                 <View style={styles.languageSelection}>
-                    <TouchableOpacity
+                    <Animatable.View
+                        animation="fadeIn"
+                        delay={500}
                         style={styles.languageButton}
-                        onPress={() => handleLanguageChange("en")}
                     >
-                        <Text style={styles.languageButtonText}>
-                            {getTranslatedText("english")}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                        <TouchableOpacity onPress={() => handleLanguageChange("en")}>
+                            <Icon name="globe" size={24} color="#007AFF" />
+                            <Text style={styles.languageButtonText}>
+                                {getTranslatedText("english")}
+                            </Text>
+                        </TouchableOpacity>
+                    </Animatable.View>
+                    <Animatable.View
+                        animation="fadeIn"
+                        delay={1000}
                         style={styles.languageButton}
-                        onPress={() => handleLanguageChange("kh")}
                     >
-                        <Text style={styles.languageButtonText}>
-                            {getTranslatedText("khmer")}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                        <TouchableOpacity onPress={() => handleLanguageChange("kh")}>
+                            <Icon name="globe" size={24} color="#007AFF" />
+                            <Text style={styles.languageButtonText}>
+                                {getTranslatedText("khmer")}
+                            </Text>
+                        </TouchableOpacity>
+                    </Animatable.View>
+                    <Animatable.View
+                        animation="fadeIn"
+                        delay={1500}
                         style={styles.languageButton}
-                        onPress={() => handleLanguageChange("th")}
                     >
-                        <Text style={styles.languageButtonText}>
-                            {getTranslatedText("thai")}
-                        </Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleLanguageChange("th")}>
+                            <Icon name="globe" size={24} color="#007AFF" />
+                            <Text style={styles.languageButtonText}>
+                                {getTranslatedText("thai")}
+                            </Text>
+                        </TouchableOpacity>
+                    </Animatable.View>
                 </View>
 
                 {/* Filter elements */}
@@ -256,16 +268,14 @@ const FilterForm: React.FC<FilterFormProps> = ({
                             setSelectedOtherProduct(value);
                         }}
                         items={otherProductOptions
-                            .filter(option => option !== "")  // Filter out empty strings
+                            .filter((option) => option !== "")
                             .map((option) => ({
                                 label: option,
                                 value: option,
-                            }))
-                        }
+                            }))}
                         style={pickerSelectStyles}
                     />
                 </View>
-
 
                 {/* Filter by Description */}
                 <View style={styles.filterGroup}>
@@ -279,10 +289,12 @@ const FilterForm: React.FC<FilterFormProps> = ({
                         }}
                         value={selectedDescription}
                         onValueChange={(value) => setSelectedDescription(value)}
-                        items={descriptionOptions.map((option) => ({
-                            label: option,
-                            value: option,
-                        }))}
+                        items={descriptionOptions
+                            .filter((option) => option !== "")
+                            .map((option) => ({
+                                label: option,
+                                value: option,
+                            }))}
                         style={pickerSelectStyles}
                     />
                 </View>
@@ -307,48 +319,70 @@ const FilterForm: React.FC<FilterFormProps> = ({
                     />
                 </View>
                 <View style={styles.buttonContainer}>
+                    {/* Clear Selections Button */}
                     <TouchableOpacity
                         style={[styles.button, styles.clearSelectionButton]}
                         onPress={clearSelections}
                     >
-                        <Icon name="close-circle-outline" size={windowWidth * 0.07} color="#fff" style={styles.icon} />
-                        <Text style={styles.buttonText}>Clear</Text>
+                        <Icon
+                            name="close-circle-outline"
+                            size={windowWidth * 0.07}
+                            color="#fff"
+                            style={styles.icon}
+                        />
+                        <Text style={styles.buttonText}>
+                            {getTranslatedText("clearSelections")}
+                        </Text>
                     </TouchableOpacity>
+
+                    {/* Filter Button */}
                     <TouchableOpacity
                         style={[styles.button, styles.filterButton]}
                         onPress={applyFilters}
                     >
-                        <Icon name="filter-outline" size={windowWidth * 0.07} color="#fff" style={styles.icon} />
-                        <Text style={styles.buttonText}>Filter</Text>
+                        <Icon
+                            name="filter-outline"
+                            size={windowWidth * 0.07}
+                            color="#fff"
+                            style={styles.icon}
+                        />
+                        <Text style={styles.buttonText}>
+                            {getTranslatedText("applyFilters")}
+                        </Text>
                     </TouchableOpacity>
+
+                    {/* Close Button */}
                     <TouchableOpacity
                         style={[styles.button, styles.filterCloseButton]}
                         onPress={toggleFilterForm}
                     >
-                        <Icon name="close-outline" size={windowWidth * 0.07} color="#fff" style={styles.icon} />
-                        <Text style={styles.buttonText}>Close</Text>
+                        <Icon
+                            name="close-outline"
+                            size={windowWidth * 0.07}
+                            color="#fff"
+                            style={styles.icon}
+                        />
+                        <Text style={styles.buttonText}>{getTranslatedText("close")}</Text>
                     </TouchableOpacity>
                 </View>
-
-
             </View>
         </View>
     );
 };
-const windowWidth = Dimensions.get('window').width;
+const windowWidth = Dimensions.get("window").width;
 const styles = StyleSheet.create({
     centeredView: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "rgba(0,0,0,0.5)",
-        height: '100%', // Ensures full height
-        width: '100%',  // Ensures full width
+        height: "100%", // Ensures full height
+        width: "100%", // Ensures full width
     },
     filterContainer: {
         padding: 20,
         backgroundColor: "#fff",
-        borderRadius: 10,
+        borderRadius: 20,
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
@@ -372,35 +406,44 @@ const styles = StyleSheet.create({
     },
     languageSelection: {
         flexDirection: "row",
-        justifyContent: "space-between",
+
         marginBottom: 10,
     },
     languageButton: {
-        backgroundColor: "#ccc",
-        padding: 10,
-        borderRadius: 5,
+        marginRight: 5,
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 10,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#007AFF",
+        backgroundColor: "#fff",
     },
     languageButtonText: {
-        fontWeight: "bold",
+        marginLeft: 10,
+        color: "#007AFF",
+        fontSize: 12,
     },
 
     buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        justifyContent: "space-between",
         paddingHorizontal: windowWidth * 0.05,
         marginTop: windowWidth * 0.02,
     },
     button: {
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
         marginHorizontal: windowWidth * 0.02,
         paddingVertical: windowWidth * 0.001, // Adjusted padding for better fit
         paddingHorizontal: windowWidth * 0.04, // Added horizontal padding for better fit
         borderRadius: windowWidth * 0.05, // More rounded corners
-        backgroundColor: '#007AFF',
-        shadowColor: '#000',
+        backgroundColor: "#007AFF",
+        shadowColor: "#000",
         shadowOffset: {
             width: 0,
             height: 2,
@@ -413,19 +456,19 @@ const styles = StyleSheet.create({
         marginRight: windowWidth * 0.005, // Space between icon and text
     },
     buttonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: "#fff",
+        fontWeight: "bold",
         fontSize: windowWidth * 0.02, // Slightly larger text
-        textAlign: 'center',
+        textAlign: "center",
     },
     clearSelectionButton: {
-        backgroundColor: '#FF3B30',
+        backgroundColor: "#007AFF",
     },
     filterButton: {
-        backgroundColor: '#4CD964',
+        backgroundColor: "#007AFF",
     },
     filterCloseButton: {
-        backgroundColor: '#FFCC00',
+        backgroundColor: "red",
     },
 });
 
