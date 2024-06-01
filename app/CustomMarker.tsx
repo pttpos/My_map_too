@@ -1,22 +1,45 @@
-import React from "react";
-import { Marker } from "react-native-maps";
-import { Svg, Circle } from "react-native-svg";
+import React from 'react';
+import { Image, StyleSheet } from 'react-native';
+import { Marker } from 'react-native-maps';
 
-interface CustomMarkerProps {
-  coordinate: {
-    latitude: number;
-    longitude: number;
-  };
+interface MarkerType {
+  id: string;
+  coordinate: { latitude: number; longitude: number };
   title: string;
-  onPress: () => void;
+  status: string; // '24h', '16h', 'under construction'
 }
 
-const CustomMarker: React.FC<CustomMarkerProps> = ({ coordinate, title, onPress }) => {
+const styles = StyleSheet.create({
+  markerImage: {
+    width: 10, // Set the desired width
+    height: 1, // Set the desired height
+  },
+});
+
+const CustomMarker: React.FC<{ marker: MarkerType; onPress: () => void }> = ({ marker, onPress }) => {
+  const getIconByStatus = (status: string): any => {
+    switch (status) {
+      case '24h':
+        return require('../assets/picture/6.png'); // Path to your 24h icon
+      case '16h':
+        return require('../assets/picture/6.png'); // Path to your 16h icon
+      case 'under construction':
+        return require('../assets/picture/6.png'); // Path to your under construction icon
+      default:
+        return require('../assets/picture/6.png'); // Default icon
+    }
+  };
+
   return (
-    <Marker coordinate={coordinate} title={title} onPress={onPress}>
-      <Svg height="40" width="40">
-        <Circle cx="20" cy="20" r="10" fill="red" />
-      </Svg>
+    <Marker
+      coordinate={marker.coordinate}
+      onPress={onPress}
+    >
+      <Image
+        source={getIconByStatus(marker.status)}
+        style={styles.markerImage}
+        resizeMode="contain"
+      />
     </Marker>
   );
 };

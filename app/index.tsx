@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
-  Button,
   Animated,
   Modal,
   Text,
@@ -13,10 +12,9 @@ import {
 } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import * as Location from "expo-location";
-
+import moment from 'moment-timezone';
 import { Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import RNPickerSelect from "react-native-picker-select";
 import CurrentLocationMarker from "./CurrentLocationMarker";
 import Footer from "./Footer";
 import Block, { IconName } from "./Block";
@@ -30,7 +28,12 @@ interface UserLocation {
   latitude: number;
   longitude: number;
 }
-
+interface MarkerType {
+  id: string;
+  coordinate: { latitude: number; longitude: number };
+  title: string;
+  status: string; // Add any other properties if necessary
+}
 const App = () => {
   const [markers, setMarkers] = useState<
     Array<{
@@ -488,6 +491,28 @@ const App = () => {
 
   const markerImage = require("../assets/picture/6.png"); // Use your custom marker image here
   // Define an object to map product values to image URLs
+  const getPinColorByTimeAndStatus = (marker: MarkerType): string => {
+    // Get the current time in the time zone of Cambodia (Indochina Time - ICT)
+    const currentTime = moment().tz('Asia/Phnom_Penh');
+    const hours = currentTime.hours();
+    const minutes = currentTime.minutes();
+
+    // Determine the pin color based on the marker's status and current time
+    if (marker.status === 'under construct') {
+      return 'yellow';
+    }
+
+    const is24h = marker.status === '24h';
+    const is16hOpen = marker.status === '16h' && (hours > 5 || (hours === 5 && minutes >= 30)) && (hours < 20 || (hours === 20 && minutes <= 30));
+    const isClosed16h = marker.status === '16h' && !(hours > 5 || (hours === 5 && minutes >= 30)) && !(hours < 20 || (hours === 20 && minutes <= 30))
+    if (is24h || is16hOpen) {
+      return '#191970'; // Marker is open
+    } else if (isClosed16h) {
+      return 'red'; // Marker is closed during the 16-hour period
+    } else {
+      return 'black'; // Default color for other cases
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -504,6 +529,7 @@ const App = () => {
             key={marker.id}
             coordinate={marker.coordinate}
             title={marker.title}
+            pinColor={getPinColorByTimeAndStatus(marker)}
             onPress={() => handleMarkerPress(marker)}
           ></Marker>
         ))}
@@ -562,6 +588,7 @@ const App = () => {
                   />
                 )}
                 <Text style={styles.modalTitle}>{selectedMarker.title}</Text>
+                <Text style={styles.status}>Opening: {selectedMarker.status}</Text>
               </View>
 
               <View style={styles.blocksContainer}>
@@ -653,6 +680,9 @@ const styles = StyleSheet.create({
     borderRadius: 0.05 * Math.min(width, height), // Adjust borderRadius relative to the smaller of width and height
     position: "relative",
   },
+  status: {
+    fontSize:16,
+  },
   imageContainer: {
     position: "relative",
   },
@@ -722,11 +752,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalContainer: {
-    flex: 1,
+    height: height,
+    width: width,
     backgroundColor: "#fff",
   },
   header: {
-    marginTop: "30%", // Adjust as needed
+    marginTop: "15%", // Adjust as needed
     alignItems: "center",
     padding: 10,
     borderBottomWidth: 1,
